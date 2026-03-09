@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Changelog — Noorana</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-wrap">
+    <a href="index.html" class="nav-brand">
+      <div class="nav-mark">N</div>
+      noorana
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Feedback</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="changelog.html" class="active">Changelog</a>
+    </div>
+    <div class="nav-right">
+      <a href="index.html" class="btn btn-primary btn-sm">+ Submit Feedback</a>
+    </div>
+  </div>
+</nav>
+
+<main class="page" style="max-width:740px">
+  <div style="margin-bottom:32px">
+    <h1 style="font-size:1.9rem;margin-bottom:8px">What's New</h1>
+    <p style="color:var(--muted);font-size:.95rem">Follow along as we build Noorana. New features, improvements, and fixes — all in one place.</p>
+  </div>
+
+  <div id="changelog-list"></div>
+</main>
+
+<footer class="site-footer">
+  <a href="admin.html" class="footer-admin-link">Admin</a>
+</footer>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+const SEED_CHANGELOG = [
+  {
+    id:'c1',
+    title:'Multi-language Parent Portal',
+    content:'Parents can now access the Noorana parent portal in **Spanish, Mandarin, French, and Arabic**. Language preferences can be set in account settings and will apply to all notifications and reports.\n\nThis was one of our most-requested features, and we\'re proud to finally deliver it to serve the diverse communities your schools support.',
+    tags:['Parent Portal','Accessibility'],
+    publishedAt:'2026-02-15T00:00:00Z'
+  },
+  {
+    id:'c2',
+    title:'Improved Attendance Tracking & Reports',
+    content:'We\'ve completely redesigned the attendance module:\n\n- **Faster check-in/check-out** with QR code scanning\n- **Absence reason tracking** for easy record-keeping\n- **Exportable monthly reports** for licensing requirements\n- **Automated parent notifications** for unexpected absences',
+    tags:['Attendance','Reports'],
+    publishedAt:'2026-01-20T00:00:00Z'
+  }
+];
+
+function getChangelog() {
+  const raw = localStorage.getItem('noorana_changelog');
+  return raw ? JSON.parse(raw) : null;
+}
+function saveChangelog(arr) {
+  localStorage.setItem('noorana_changelog', JSON.stringify(arr));
+}
+function initChangelog() {
+  if (!getChangelog()) saveChangelog(SEED_CHANGELOG);
+}
+
+function renderMarkdown(text) {
+  if (!text) return '';
+  const esc = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lines = esc.split('\n');
+  let html = '';
+  let inList = false;
+  for (const line of lines) {
+    if (line.startsWith('- ')) {
+      if (!inList) { html += '<ul>'; inList = true; }
+      html += `<li>${inlineFmt(line.slice(2))}</li>`;
+    } else {
+      if (inList) { html += '</ul>'; inList = false; }
+      if (line.trim() === '') { html += '<br>'; }
+      else html += `<p>${inlineFmt(line)}</p>`;
+    }
+  }
+  if (inList) html += '</ul>';
+  return html;
+}
+function inlineFmt(t) {
+  return t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>');
+}
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
+}
+
+function render() {
+  const data = [...getChangelog()].sort((a,b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+  const el = document.getElementById('changelog-list');
+  if (!data.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><h3>No updates yet</h3><p>Check back soon for the latest from the Noorana team.</p></div>`;
+    return;
+  }
+  el.innerHTML = data.map(p => `
+    <div class="cl-post">
+      <div class="cl-meta">
+        <span class="cl-date">${formatDate(p.publishedAt)}</span>
+        ${(p.tags||[]).map(t => `<span class="cl-tag">${t}</span>`).join('')}
+      </div>
+      <h2 class="cl-title">${p.title}</h2>
+      <div class="cl-content">${renderMarkdown(p.content)}</div>
+    </div>`).join('');
+}
+
+initChangelog();
+render();
+</script>
+</body>
+</html>

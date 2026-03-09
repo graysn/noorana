@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Noorana Feedback</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- LOGIN VIEW -->
+<div id="login-view" class="admin-login">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="nav-mark">N</div>
+      <span style="font-family:'Aleo',serif;font-weight:700;font-size:1.1rem;color:var(--dark)">noorana</span>
+      <span class="admin-badge">Admin</span>
+    </div>
+    <h1>Sign in</h1>
+    <p class="login-sub">Manage feedback, post updates, and invite your team.</p>
+    <div class="login-fields">
+      <div class="field">
+        <label class="label">Email</label>
+        <input class="input" id="login-email" type="email" placeholder="admin@noorana.app" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="field">
+        <label class="label">Password</label>
+        <input class="input" id="login-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Sign In</button>
+    <div id="login-err" style="color:var(--red);font-size:.85rem;margin-top:10px;display:none"></div>
+    <div class="demo-hint">
+      <strong>Demo credentials:</strong><br>
+      Email: <strong>admin@noorana.app</strong><br>
+      Password: <strong>noorana2024</strong>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN SHELL -->
+<div id="admin-view" class="admin-shell" style="display:none">
+  <div class="admin-topbar">
+    <div class="logo">
+      <div class="nav-mark">N</div>
+      <span>noorana</span>
+      <span class="admin-badge">Admin</span>
+    </div>
+    <span class="admin-user" id="admin-user-label"></span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <a href="index.html" class="logout-btn" style="text-decoration:none">← View Site</a>
+      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="admin-main">
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchTab('feedback',this)">Feedback</button>
+      <button class="admin-tab" onclick="switchTab('changelog',this)">Changelog</button>
+      <button class="admin-tab" onclick="switchTab('team',this)">Team</button>
+    </div>
+
+    <!-- FEEDBACK TAB -->
+    <div id="tab-feedback">
+      <div class="section-head">
+        <h2>All Feedback</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="sort-select" id="admin-filter" onchange="renderAdminFeedback()">
+            <option value="all">All statuses</option>
+            <option value="exploring">Exploring</option>
+            <option value="next">Next</option>
+            <option value="now">Now</option>
+            <option value="shipped">Shipped</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+      </div>
+      <div id="admin-feedback-list"></div>
+    </div>
+
+    <!-- CHANGELOG TAB -->
+    <div id="tab-changelog" style="display:none">
+      <div class="section-head">
+        <h2>Changelog</h2>
+        <button class="btn btn-primary btn-sm" onclick="openNewPost()">+ New Post</button>
+      </div>
+
+      <!-- New/Edit Post Form -->
+      <div id="post-form" style="display:none;background:white;border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;margin-bottom:24px">
+        <h3 style="margin-bottom:16px;font-size:1rem" id="post-form-title">New Post</h3>
+        <div class="gap-stack">
+          <div class="field">
+            <label class="label">Title <span class="req">*</span></label>
+            <input class="input" id="post-title" type="text" placeholder="What shipped?">
+          </div>
+          <div class="field">
+            <label class="label">Content <span class="req">*</span></label>
+            <textarea class="textarea" id="post-content" style="min-height:140px" placeholder="Describe what's new. Use **bold** for emphasis and - for bullet points."></textarea>
+            <span class="hint">Supports **bold**, *italic*, and - bullet lists</span>
+          </div>
+          <div class="field">
+            <label class="label">Tags</label>
+            <input class="input" id="post-tags" type="text" placeholder="Feature, Bug Fix, Improvement (comma-separated)">
+          </div>
+          <div class="field">
+            <label class="label">Publish Date</label>
+            <input class="input" id="post-date" type="date">
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn btn-outline btn-sm" onclick="closePostForm()">Cancel</button>
+            <button class="btn btn-primary btn-sm" onclick="savePost()">Publish Post</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="admin-changelog-list"></div>
+    </div>
+
+    <!-- TEAM TAB -->
+    <div id="tab-team" style="display:none">
+      <div class="section-head">
+        <h2>Admin Team</h2>
+      </div>
+
+      <!-- Invite Form -->
+      <div style="background:white;border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;margin-bottom:24px">
+        <h3 style="font-size:1rem;margin-bottom:16px">Invite an Admin</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field">
+            <label class="label">Name <span class="req">*</span></label>
+            <input class="input" id="invite-name" type="text" placeholder="Jane Smith">
+          </div>
+          <div class="field">
+            <label class="label">Email <span class="req">*</span></label>
+            <input class="input" id="invite-email" type="email" placeholder="jane@noorana.app">
+          </div>
+          <div class="field">
+            <label class="label">Password <span class="req">*</span></label>
+            <input class="input" id="invite-pass" type="text" placeholder="Temporary password">
+          </div>
+          <div class="field">
+            <label class="label">Role</label>
+            <select class="select" id="invite-role">
+              <option value="admin">Admin</option>
+              <option value="owner">Owner</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;justify-content:flex-end">
+          <button class="btn btn-primary btn-sm" onclick="inviteAdmin()">Add Admin</button>
+        </div>
+      </div>
+
+      <div id="admin-team-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback Edit Modal -->
+<div class="overlay" id="fb-edit-overlay" onclick="if(event.target===this)closeFbModal()">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-head">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap" id="fb-modal-meta"></div>
+        <input class="input" id="fb-modal-title" type="text" placeholder="Title"
+          style="font-family:'Aleo',serif;font-size:1.1rem;font-weight:600;padding:4px 0;border-color:transparent;background:transparent;box-shadow:none;color:var(--dark);border-radius:0;border-bottom:1.5px solid var(--border)">
+      </div>
+      <button class="modal-x" onclick="closeFbModal()" style="align-self:flex-start;margin-top:2px">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label class="label">Description</label>
+        <textarea class="textarea" id="fb-modal-desc" style="min-height:80px" placeholder="No description"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="field">
+          <label class="label">Type</label>
+          <div class="label-picker" id="fb-modal-label-picker" style="gap:6px">
+            <button type="button" class="label-pick-btn label-pick-bug"      data-label="bug"      onclick="pickModalLabel('bug')">Bug</button>
+            <button type="button" class="label-pick-btn label-pick-feature"  data-label="feature"  onclick="pickModalLabel('feature')">Feature</button>
+            <button type="button" class="label-pick-btn label-pick-question" data-label="question" onclick="pickModalLabel('question')">Question</button>
+            <button type="button" class="label-pick-btn label-pick-request"  data-label="request"  onclick="pickModalLabel('request')">Request</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Status</label>
+          <select class="select" id="fb-modal-status">
+            <option value="exploring">Exploring</option>
+            <option value="next">Next</option>
+            <option value="now">Now</option>
+            <option value="shipped">Shipped</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Response to submitter
+          <span style="font-weight:400;color:var(--muted);font-size:.78rem;margin-left:4px">shown publicly on the feedback board</span>
+        </label>
+        <textarea class="response-box" id="fb-modal-response" placeholder="Write a response visible to all users…" style="min-height:80px"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between;border-top:1px solid var(--border);padding-top:14px">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-outline btn-sm" id="fb-modal-archive-btn" onclick="toggleArchiveModal()"></button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteFbModal()">Delete</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" onclick="closeFbModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveFbModal()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="overlay" id="confirm-overlay" onclick="if(event.target===this)closeConfirm()">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-head"><h2 id="confirm-title">Confirm</h2><button class="modal-x" onclick="closeConfirm()">✕</button></div>
+    <div class="modal-body"><p id="confirm-msg" style="font-size:.9rem;color:var(--text)"></p></div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ── SEED + STORAGE ─────────────────────────────────────────────────────
+const SEED_FEEDBACK = [
+  { id:'f1', title:'Parent daily reports with photos', description:"Would love to be able to send parents a daily snapshot of their child's activities, including photos taken throughout the day.", email:'sarah.johnson@mountainviewmontessori.edu', status:'now', votes:31, voters:[], createdAt:'2026-02-20T10:30:00Z', adminResponse:null },
+  { id:'f2', title:'Bulk student enrollment via CSV import', description:'At the start of each school year, we need to enroll dozens of students. A CSV import feature would save our administrative team hours.', email:'director@sunrisemontessori.com', status:'next', votes:18, voters:[], createdAt:'2026-02-15T14:22:00Z', adminResponse:null },
+  { id:'f3', title:'QuickBooks integration for tuition invoicing', description:'Our finance team uses QuickBooks. Having Noorana sync tuition payments directly would eliminate double-entry errors.', email:'admin@littlelearnersschool.org', status:'exploring', votes:24, voters:[], createdAt:'2026-02-10T09:15:00Z', adminResponse:null },
+  { id:'f4', title:'Multi-language support for the parent portal', description:'Many of our families speak languages other than English. Spanish and Mandarin would be a great start.', email:'info@terraemontessori.com', status:'shipped', votes:45, voters:[], createdAt:'2026-01-05T11:00:00Z', adminResponse:"We're thrilled to announce that multi-language support has shipped! Spanish, Mandarin, French, and Arabic are now available." },
+  { id:'f5', title:'Customizable lesson plan templates', description:'Our teachers spend a lot of time formatting lesson plans. Pre-built Montessori-aligned templates would be a huge time saver.', email:'teacher@harmonymontessori.edu', status:'exploring', votes:11, voters:[], createdAt:'2026-03-01T16:45:00Z', adminResponse:null },
+];
+const SEED_CHANGELOG = [
+  { id:'c1', title:'Multi-language Parent Portal', content:'Parents can now access the Noorana parent portal in **Spanish, Mandarin, French, and Arabic**. Language preferences can be set in account settings.\n\nThis was one of our most-requested features, and we\'re proud to finally deliver it.', tags:['Parent Portal','Accessibility'], publishedAt:'2026-02-15T00:00:00Z' },
+  { id:'c2', title:'Improved Attendance Tracking & Reports', content:'We\'ve completely redesigned the attendance module:\n\n- **Faster check-in/check-out** with QR code scanning\n- **Absence reason tracking** for easy record-keeping\n- **Exportable monthly reports** for licensing requirements\n- **Automated parent notifications** for unexpected absences', tags:['Attendance','Reports'], publishedAt:'2026-01-20T00:00:00Z' }
+];
+const SEED_ADMINS = [
+  { email:'admin@noorana.app', password:'noorana2024', name:'Noorana Admin', role:'owner' }
+];
+
+function getFeedback()  { return JSON.parse(localStorage.getItem('noorana_feedback')  || 'null') || (() => { saveFeedback(SEED_FEEDBACK);  return SEED_FEEDBACK; })(); }
+function getChangelog() { return JSON.parse(localStorage.getItem('noorana_changelog') || 'null') || (() => { saveChangelog(SEED_CHANGELOG); return SEED_CHANGELOG; })(); }
+function getAdmins()    { return JSON.parse(localStorage.getItem('noorana_admins')    || 'null') || (() => { saveAdmins(SEED_ADMINS);    return SEED_ADMINS; })(); }
+function saveFeedback(d)  { localStorage.setItem('noorana_feedback',  JSON.stringify(d)); }
+function saveChangelog(d) { localStorage.setItem('noorana_changelog', JSON.stringify(d)); }
+function saveAdmins(d)    { localStorage.setItem('noorana_admins',    JSON.stringify(d)); }
+function getSession()   { return JSON.parse(localStorage.getItem('noorana_session') || 'null'); }
+function setSession(s)  { localStorage.setItem('noorana_session', JSON.stringify(s)); }
+function clearSession() { localStorage.removeItem('noorana_session'); }
+
+// ── AUTH ───────────────────────────────────────────────────────────────
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('login-pass').value;
+  const admins = getAdmins();
+  const match = admins.find(a => a.email.toLowerCase() === email && a.password === pass);
+  if (!match) {
+    const err = document.getElementById('login-err');
+    err.textContent = 'Invalid email or password.';
+    err.style.display = 'block';
+    return;
+  }
+  setSession({ email: match.email, name: match.name, role: match.role });
+  showAdmin(match);
+}
+function doLogout() {
+  clearSession();
+  document.getElementById('admin-view').style.display = 'none';
+  document.getElementById('login-view').style.display = 'flex';
+  document.getElementById('login-pass').value = '';
+}
+function showAdmin(user) {
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('admin-view').style.display = 'flex';
+  document.getElementById('admin-user-label').textContent = user.name + ' (' + user.role + ')';
+  renderAdminFeedback();
+}
+
+// ── TAB SWITCHING ──────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  ['feedback','changelog','team'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (name === 'changelog') renderAdminChangelog();
+  if (name === 'team') renderTeam();
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function formatDate(iso) { return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function statusLabel(s) { return {'exploring':'Exploring','next':'Next','now':'Now','shipped':'Shipped','closed':'Closed','under-review':'Exploring','planned':'Next','in-progress':'Now'}[s]||s; }
+function migrateStatuses() {
+  const map = {'under-review':'exploring','planned':'next','in-progress':'now','closed':'shipped'};
+  const raw = localStorage.getItem('noorana_feedback');
+  if (!raw) return;
+  const data = JSON.parse(raw);
+  let changed = false;
+  data.forEach(f => { if (map[f.status]) { f.status = map[f.status]; changed = true; } });
+  if (changed) localStorage.setItem('noorana_feedback', JSON.stringify(data));
+}
+
+// ── FEEDBACK ADMIN ─────────────────────────────────────────────────────
+function renderAdminFeedback() {
+  const filter = document.getElementById('admin-filter').value;
+  let data = [...getFeedback()];
+  if (filter === 'archived') {
+    data = data.filter(f => f.archived);
+  } else {
+    data = data.filter(f => !f.archived);
+    if (filter !== 'all') data = data.filter(f => f.status === filter);
+  }
+  data.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const el = document.getElementById('admin-feedback-list');
+  if (!data.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><h3>No feedback</h3></div>`;
+    return;
+  }
+
+  el.innerHTML = `<div style="overflow-x:auto"><table class="admin-table">
+    <thead><tr>
+      <th style="width:40%">Title</th>
+      <th>Email</th>
+      <th>Votes</th>
+      <th>Status</th>
+      <th>Date</th>
+      <th></th>
+    </tr></thead>
+    <tbody>` + data.map(f => `
+    <tr id="row-${f.id}" style="cursor:pointer" onclick="openFbModal('${f.id}')"${f.archived?' class="archived-row"':''}>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <strong style="font-size:.875rem;color:var(--dark)">${escHtml(f.title)}</strong>
+          ${f.archived ? '<span class="badge badge-archived">Archived</span>' : ''}
+          ${f.adminResponse ? '<span style="font-size:.7rem;background:var(--orange-light);color:var(--orange-dark);padding:1px 6px;border-radius:8px;font-weight:600">Response</span>' : ''}
+        </div>
+        ${f.description?`<div style="font-size:.78rem;color:var(--muted);margin-top:3px;max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(f.description)}</div>`:''}
+      </td>
+      <td style="font-size:.82rem;color:var(--muted)">${escHtml(f.email)}</td>
+      <td style="font-weight:700;color:var(--dark)">${f.votes}</td>
+      <td>
+        <span class="badge badge-${f.status}" style="font-size:.72rem">${statusLabel(f.status)}</span>
+        ${f.label ? `<span class="label-pill label-pill-${f.label}" style="margin-left:4px;font-size:.7rem">${f.label}</span>` : ''}
+      </td>
+      <td style="font-size:.8rem;color:var(--muted);white-space:nowrap">${formatDate(f.createdAt)}</td>
+      <td onclick="event.stopPropagation()">
+        <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="confirmDelete('feedback','${f.id}','${escHtml(f.title)}')">✕</button>
+      </td>
+    </tr>`).join('') + `</tbody></table></div>`;
+}
+
+// ── FEEDBACK MODAL ─────────────────────────────────────────────────────
+let editingFbId = null;
+let modalLabel  = '';
+
+function openFbModal(id) {
+  const f = getFeedback().find(x => x.id === id);
+  if (!f) return;
+  editingFbId = id;
+  modalLabel  = f.label || '';
+
+  const votes = f.votes;
+  document.getElementById('fb-modal-meta').innerHTML =
+    `<span>${escHtml(f.email)}</span>
+     <span style="opacity:.45">·</span>
+     <span>${formatDate(f.createdAt)}</span>
+     <span style="opacity:.45">·</span>
+     <span>${votes} vote${votes !== 1 ? 's' : ''}</span>
+     ${f.archived ? '<span class="badge badge-archived" style="margin-left:4px">Archived</span>' : ''}`;
+
+  document.getElementById('fb-modal-title').value   = f.title;
+  document.getElementById('fb-modal-desc').value    = f.description || '';
+  document.getElementById('fb-modal-status').value  = f.status;
+  document.getElementById('fb-modal-response').value = f.adminResponse || '';
+  document.getElementById('fb-modal-archive-btn').textContent = f.archived ? 'Unarchive' : 'Archive';
+
+  document.querySelectorAll('#fb-modal-label-picker .label-pick-btn').forEach(b =>
+    b.classList.toggle('selected', b.dataset.label === modalLabel)
+  );
+
+  document.getElementById('fb-edit-overlay').classList.add('open');
+  document.getElementById('fb-modal-title').focus();
+}
+
+function closeFbModal() {
+  document.getElementById('fb-edit-overlay').classList.remove('open');
+  editingFbId = null;
+}
+
+function pickModalLabel(key) {
+  modalLabel = key;
+  document.querySelectorAll('#fb-modal-label-picker .label-pick-btn').forEach(b =>
+    b.classList.toggle('selected', b.dataset.label === key)
+  );
+}
+
+function saveFbModal() {
+  if (!editingFbId) return;
+  const title = document.getElementById('fb-modal-title').value.trim();
+  if (!title) { toast('Title is required.', 'err'); return; }
+  const data = getFeedback();
+  const item = data.find(f => f.id === editingFbId);
+  if (!item) return;
+  item.title         = title;
+  item.description   = document.getElementById('fb-modal-desc').value.trim();
+  item.status        = document.getElementById('fb-modal-status').value;
+  item.label         = modalLabel || item.label;
+  item.adminResponse = document.getElementById('fb-modal-response').value.trim() || null;
+  saveFeedback(data);
+  closeFbModal();
+  renderAdminFeedback();
+  toast('Feedback updated.', 'ok');
+}
+
+function toggleArchiveModal() {
+  if (!editingFbId) return;
+  const data = getFeedback();
+  const item = data.find(f => f.id === editingFbId);
+  if (!item) return;
+  item.archived = !item.archived;
+  saveFeedback(data);
+  closeFbModal();
+  renderAdminFeedback();
+  toast(item.archived ? 'Feedback archived.' : 'Feedback unarchived.', 'ok');
+}
+
+function deleteFbModal() {
+  if (!editingFbId) return;
+  const item = getFeedback().find(f => f.id === editingFbId);
+  if (!item) return;
+  closeFbModal();
+  confirmDelete('feedback', item.id, item.title);
+}
+
+// ── CHANGELOG ADMIN ────────────────────────────────────────────────────
+let editingPostId = null;
+
+function renderAdminChangelog() {
+  const data = [...getChangelog()].sort((a,b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+  const el = document.getElementById('admin-changelog-list');
+  if (!data.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><h3>No posts yet</h3><p>Create your first changelog post above.</p></div>`;
+    return;
+  }
+  el.innerHTML = data.map(p => `
+    <div style="background:white;border:1px solid var(--border);border-radius:var(--r-lg);padding:20px 24px;margin-bottom:12px">
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div style="flex:1">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+            <span style="font-size:.8rem;color:var(--muted);font-weight:500">${formatDate(p.publishedAt)}</span>
+            ${(p.tags||[]).map(t=>`<span class="tag-pill">${t}</span>`).join('')}
+          </div>
+          <h3 style="font-size:1rem;color:var(--dark)">${escHtml(p.title)}</h3>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-outline btn-sm" onclick="editPost('${p.id}')">Edit</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="confirmDelete('changelog','${p.id}','${escHtml(p.title)}')">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openNewPost() {
+  editingPostId = null;
+  document.getElementById('post-form-title').textContent = 'New Post';
+  document.getElementById('post-title').value = '';
+  document.getElementById('post-content').value = '';
+  document.getElementById('post-tags').value = '';
+  document.getElementById('post-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('post-form').style.display = 'block';
+  document.getElementById('post-title').focus();
+}
+
+function editPost(id) {
+  const p = getChangelog().find(x => x.id === id);
+  if (!p) return;
+  editingPostId = id;
+  document.getElementById('post-form-title').textContent = 'Edit Post';
+  document.getElementById('post-title').value = p.title;
+  document.getElementById('post-content').value = p.content;
+  document.getElementById('post-tags').value = (p.tags||[]).join(', ');
+  document.getElementById('post-date').value = p.publishedAt.slice(0,10);
+  document.getElementById('post-form').style.display = 'block';
+  document.getElementById('post-title').focus();
+}
+
+function closePostForm() { document.getElementById('post-form').style.display = 'none'; editingPostId = null; }
+
+function savePost() {
+  const title   = document.getElementById('post-title').value.trim();
+  const content = document.getElementById('post-content').value.trim();
+  const tagsRaw = document.getElementById('post-tags').value.trim();
+  const date    = document.getElementById('post-date').value;
+  if (!title)   { toast('Please enter a title.', 'err'); return; }
+  if (!content) { toast('Please enter content.',  'err'); return; }
+  const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const publishedAt = date ? new Date(date).toISOString() : new Date().toISOString();
+  const data = getChangelog();
+  if (editingPostId) {
+    const item = data.find(x => x.id === editingPostId);
+    if (item) { item.title = title; item.content = content; item.tags = tags; item.publishedAt = publishedAt; }
+  } else {
+    data.unshift({ id:'c'+Date.now(), title, content, tags, publishedAt });
+  }
+  saveChangelog(data);
+  closePostForm();
+  renderAdminChangelog();
+  toast(editingPostId ? 'Post updated.' : 'Post published!', 'ok');
+  editingPostId = null;
+}
+
+// ── TEAM ───────────────────────────────────────────────────────────────
+function renderTeam() {
+  const admins = getAdmins();
+  const session = getSession();
+  const el = document.getElementById('admin-team-list');
+  el.innerHTML = `<table class="admin-table">
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
+    <tbody>${admins.map(a => `
+      <tr>
+        <td style="font-weight:600;color:var(--dark)">${escHtml(a.name)} ${a.email === session?.email ? '<span style="font-size:.72rem;background:var(--cream-2);padding:1px 6px;border-radius:4px;color:var(--muted)">you</span>' : ''}</td>
+        <td style="font-size:.85rem;color:var(--muted)">${escHtml(a.email)}</td>
+        <td><span class="tag-pill" style="text-transform:capitalize">${a.role}</span></td>
+        <td>${a.email !== session?.email ? `<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="confirmDelete('admin','${escHtml(a.email)}','${escHtml(a.name)}')">Remove</button>` : ''}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function inviteAdmin() {
+  const name  = document.getElementById('invite-name').value.trim();
+  const email = document.getElementById('invite-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('invite-pass').value.trim();
+  const role  = document.getElementById('invite-role').value;
+  if (!name || !email || !pass) { toast('Please fill in all fields.', 'err'); return; }
+  if (!email.includes('@'))     { toast('Invalid email address.', 'err'); return; }
+  const admins = getAdmins();
+  if (admins.find(a => a.email.toLowerCase() === email)) { toast('Admin already exists.', 'err'); return; }
+  admins.push({ email, password:pass, name, role });
+  saveAdmins(admins);
+  document.getElementById('invite-name').value = '';
+  document.getElementById('invite-email').value = '';
+  document.getElementById('invite-pass').value = '';
+  renderTeam();
+  toast(`${name} added as ${role}.`, 'ok');
+}
+
+// ── DELETE / CONFIRM ───────────────────────────────────────────────────
+let pendingDelete = null;
+
+function confirmDelete(type, id, label) {
+  pendingDelete = { type, id };
+  const msg = type === 'admin'
+    ? `Remove ${label} from the admin team?`
+    : `Delete "${label}"? This cannot be undone.`;
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-title').textContent = type === 'admin' ? 'Remove Admin' : 'Delete';
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').onclick = executeDelete;
+}
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  pendingDelete = null;
+}
+function executeDelete() {
+  if (!pendingDelete) return;
+  const { type, id } = pendingDelete;
+  if (type === 'feedback') {
+    saveFeedback(getFeedback().filter(f => f.id !== id));
+    renderAdminFeedback();
+    toast('Feedback deleted.', 'ok');
+  } else if (type === 'changelog') {
+    saveChangelog(getChangelog().filter(p => p.id !== id));
+    renderAdminChangelog();
+    toast('Post deleted.', 'ok');
+  } else if (type === 'admin') {
+    saveAdmins(getAdmins().filter(a => a.email !== id));
+    renderTeam();
+    toast('Admin removed.', 'ok');
+  }
+  closeConfirm();
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────
+function toast(msg, type) {
+  const wrap = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' '+type : '');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────
+(function init() {
+  migrateStatuses();
+  // Ensure data seeded
+  getFeedback(); getChangelog(); getAdmins();
+  const session = getSession();
+  if (session) {
+    const admins = getAdmins();
+    const match = admins.find(a => a.email === session.email);
+    if (match) { showAdmin(match); return; }
+    clearSession();
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roadmap — Noorana</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-wrap">
+    <a href="index.html" class="nav-brand">
+      <div class="nav-mark">N</div>
+      noorana
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Feedback</a>
+      <a href="roadmap.html" class="active">Roadmap</a>
+      <a href="changelog.html">Changelog</a>
+    </div>
+    <div class="nav-right">
+      <a href="index.html" class="btn btn-primary btn-sm">+ Submit Feedback</a>
+    </div>
+  </div>
+</nav>
+
+<main class="page">
+  <div style="margin-bottom:28px">
+    <h1 style="font-size:1.9rem;margin-bottom:8px">Roadmap</h1>
+    <p style="color:var(--muted);font-size:.95rem">See what we're working on, what's planned, and what's shipped.</p>
+  </div>
+
+  <div class="kanban-board" id="kanban-board"></div>
+</main>
+
+<footer class="site-footer">
+  <a href="admin.html" class="footer-admin-link">Admin</a>
+</footer>
+
+<!-- Detail Modal -->
+<div class="overlay" id="detail-overlay" onclick="maybeCloseDetail(event)">
+  <div class="modal detail-modal" id="detail-drawer"></div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+const COLUMNS = [
+  { key:'exploring', label:'Exploring' },
+  { key:'next',      label:'Next' },
+  { key:'now',       label:'Now' },
+  { key:'shipped',   label:'Shipped' },
+];
+
+function getFeedback() {
+  const raw = localStorage.getItem('noorana_feedback');
+  return raw ? JSON.parse(raw) : [];
+}
+function saveFeedback(d) { localStorage.setItem('noorana_feedback', JSON.stringify(d)); }
+function getVoterId() {
+  let id = localStorage.getItem('noorana_voter_id');
+  if (!id) { id = 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); localStorage.setItem('noorana_voter_id', id); }
+  return id;
+}
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function formatDate(iso) { return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function statusLabel(s) { return {'exploring':'Exploring','next':'Next','now':'Now','shipped':'Shipped','closed':'Closed','under-review':'Exploring','planned':'Next','in-progress':'Now'}[s]||s; }
+function migrateStatuses() {
+  const map = {'under-review':'exploring','planned':'next','in-progress':'now','closed':'shipped'};
+  const raw = localStorage.getItem('noorana_feedback');
+  if (!raw) return;
+  const data = JSON.parse(raw);
+  let changed = false;
+  data.forEach(f => { if (map[f.status]) { f.status = map[f.status]; changed = true; } });
+  if (changed) localStorage.setItem('noorana_feedback', JSON.stringify(data));
+}
+
+function render() {
+  const all = getFeedback().filter(f => !f.archived);
+  const voterId = getVoterId();
+  const board = document.getElementById('kanban-board');
+
+  board.innerHTML = COLUMNS.map(col => {
+    const items = all.filter(f => f.status === col.key).sort((a,b) => b.votes - a.votes);
+    return `
+      <div class="kanban-col">
+        <div class="kanban-col-head">
+          <span class="kanban-col-label">${col.label}</span>
+          <span class="kanban-col-count">${items.length}</span>
+        </div>
+        <div class="kanban-cards">
+          ${items.length ? items.map(f => {
+            const voted = f.voters.includes(voterId);
+            return `<div class="kanban-card" onclick="openDetail('${f.id}')">
+              <div class="kanban-card-title">${escHtml(f.title)}</div>
+              ${f.description ? `<div class="kanban-card-desc">${escHtml(f.description)}</div>` : ''}
+              <div class="kanban-card-meta">
+                <svg class="heart-icon" style="width:11px;height:11px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>
+                <span>${f.votes}</span>
+                ${voted ? '<span style="color:var(--orange);margin-left:2px">·&nbsp;voted</span>' : ''}
+              </div>
+            </div>`;
+          }).join('') : `<div class="kanban-empty">No items</div>`}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleVote(id) {
+  const voterId = getVoterId();
+  const data = getFeedback();
+  const item = data.find(f => f.id === id);
+  if (!item) return;
+  const idx = item.voters.indexOf(voterId);
+  if (idx === -1) { item.voters.push(voterId); item.votes++; }
+  else            { item.voters.splice(idx, 1); item.votes--; }
+  saveFeedback(data);
+  render();
+  openDetail(id);
+}
+
+function openDetail(id) {
+  const data = getFeedback();
+  const f = data.find(x => x.id === id);
+  if (!f) return;
+  const voterId = getVoterId();
+  const voted = f.voters.includes(voterId);
+
+  document.getElementById('detail-drawer').innerHTML = `
+    <div class="modal-head">
+      <div style="flex:1">
+        <span class="badge badge-${f.status}" style="margin-bottom:8px;display:inline-flex">${statusLabel(f.status)}</span>
+        <h2 style="font-size:1.15rem;line-height:1.3">${escHtml(f.title)}</h2>
+      </div>
+      <button class="modal-x" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="modal-body">
+      ${f.description ? `<p style="color:var(--text);font-size:.9rem;line-height:1.7">${escHtml(f.description)}</p>` : ''}
+      ${f.adminResponse ? `
+        <div class="admin-response">
+          <div class="admin-response-label">🔖 Noorana Team Response</div>
+          <p>${escHtml(f.adminResponse)}</p>
+        </div>` : ''}
+      <div style="color:var(--muted);font-size:.8rem">Submitted ${formatDate(f.createdAt)}</div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:14px">
+      <button class="vote-btn${voted?' voted':''}" onclick="toggleVote('${f.id}')" style="padding:8px 16px;">
+        <svg class="heart-icon" style="width:18px;height:18px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>
+        <span style="font-size:1rem;font-weight:700">${f.votes}</span>
+        <span style="font-size:.85rem;font-weight:500">${voted?'Liked':'Like'}</span>
+      </button>
+    </div>`;
+
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+function closeDetail() { document.getElementById('detail-overlay').classList.remove('open'); }
+function maybeCloseDetail(e) { if (e.target.id === 'detail-overlay') closeDetail(); }
+
+function toast(msg, type) {
+  const wrap = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' '+type : '');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+migrateStatuses();
+render();
+</script>
+</body>
+</html>
