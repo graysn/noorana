@@ -304,7 +304,8 @@ nav.site-nav { background: white; border-bottom: 1px solid var(--border); positi
 .divider { height: 1px; background: var(--border); }
 
 /* ── KANBAN BOARD ── */
-.kanban-board { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 24px; align-items: flex-start; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+.kanban-board { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 24px; align-items: flex-start; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; scrollbar-width: none; }
+.kanban-board::-webkit-scrollbar { display: none; }
 .kanban-col { flex: 0 0 260px; background: var(--cream-2); border-radius: var(--r-lg); padding: 14px; }
 .kanban-col-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
 .kanban-col-label { font-family: 'Aleo', serif; font-size: .9rem; font-weight: 700; color: var(--dark); }
@@ -326,6 +327,23 @@ nav.site-nav { background: white; border-bottom: 1px solid var(--border); positi
 .site-footer { text-align: center; padding: 40px 24px 28px; margin-top: 24px; border-top: 1px solid var(--border); }
 .footer-admin-link { font-size: .72rem; color: var(--muted); opacity: .35; transition: opacity .2s; }
 .footer-admin-link:hover { opacity: .9; color: var(--dark); }
+
+/* ── TOUCH DEVICE ENHANCEMENTS ── */
+@media (hover: none) and (pointer: coarse) {
+  .vote-btn:active { transform: scale(0.95); }
+  .fb-row:active { background: var(--cream); }
+  .kanban-card:active { transform: scale(0.98); box-shadow: var(--shadow); }
+  .btn:active { transform: scale(0.97); }
+  .filter-tab:active { transform: scale(0.96); }
+  .nav-links a:active { background: var(--cream); }
+  .sidebar-filter-item:active { transform: scale(0.98); }
+  .fb-card:hover { transform: none; box-shadow: none; border-color: var(--border); }
+  .kanban-card:hover { transform: none; box-shadow: none; border-color: var(--border); }
+  .btn, .vote-btn, .filter-tab, .nav-links a, .admin-tab, .label-pick-btn, .sidebar-filter-item {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
 
 /* ── RESPONSIVE: iPad Pro / Large Tablet ── */
 @media (max-width: 1024px) {
